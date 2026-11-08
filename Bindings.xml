@@ -1,0 +1,13 @@
+<Bindings>
+    <!--
+    Key bindings, listed under Options > Keybindings > AddOns > Bobber.
+    The labels are set in Core.lua. A "CLICK" binding clicks a secure button:
+    BobberCastButton is in Casting.lua, and the two equip buttons are in Gear.lua.
+    -->
+    <Binding name="CLICK BobberCastButton:LeftButton" header="BOBBER" category="ADDONS"/>
+    <Binding name="CLICK BobberEquipPoleButton:LeftButton" category="ADDONS"/>
+    <Binding name="CLICK BobberEquipWeaponsButton:LeftButton" category="ADDONS"/>
+    <Binding name="BOBBER_TOGGLE_WINDOW" category="ADDONS">
+        Bobber_ToggleWindow()
+    </Binding>
+</Bindings>

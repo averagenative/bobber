@@ -1,0 +1,22 @@
+## Interface: 16001
+## Title: Bobber
+## Notes: Fishing helper: double right-click to cast, right-click anywhere to loot, louder splash, pole and weapon swap, and a fish catch tracker.
+## Author: averagenative
+## Version: 0.1.0
+## IconTexture: Interface\Icons\Trade_Fishing
+## Category: Professions
+## SavedVariables: BobberDB
+## SavedVariablesPerCharacter: BobberCharDB
+## AddonCompartmentFunc: Bobber_OnAddonCompartmentClick
+## X-License: MIT
+## X-Website: https://github.com/averagenative/bobber
+
+Core.lua
+CVarLease.lua
+Themes.lua
+Casting.lua
+Sounds.lua
+Gear.lua
+Catches.lua
+Window.lua
+Options.lua

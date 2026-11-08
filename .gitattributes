@@ -1,0 +1,2 @@
+# Store text with LF line endings; the game reads either.
+* text=auto eol=lf
