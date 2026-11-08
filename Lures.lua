@@ -7,10 +7,12 @@ cast press: when your pole has no lure, your next double right-click (or
 Cast Fishing key press) puts on the best lure in your bags instead of
 casting. The press after that casts.
 
-* "Best" means the biggest fishing bonus among the lures in your bags that
-  your fishing skill can use.
-* If there's no usable lure in your bags, Bobber casts as usual and says
-  nothing.
+* "Best" means the biggest fishing bonus among the lures your fishing
+  skill can use. When two have the same bonus, the Wide-Brimmed Fishing Hat
+  goes first (it isn't used up), then the easier-to-get lure.
+* The Wide-Brimmed Fishing Hat counts while you're wearing it and its lure
+  is off cooldown (10 minutes, the same as the lure lasts).
+* If there's no usable lure, Bobber casts as usual and says nothing.
 * Lures take 5 seconds to put on. Presses during that time do nothing, so
   a quick second click can't interrupt it.
 * A lure that fails twice in a row is skipped for the rest of the session,
@@ -18,8 +20,10 @@ casting. The press after that casts.
 
 How a press puts a lure on: Casting.lua's cast button calls
 Lures.GetLureMacroForThisPress() in its PreClick. If a lure should go on,
-the button runs "/use item:<lure>" then "/use 16" (16 is the main hand,
-where the pole is) for that one press, instead of casting.
+the button runs "/use item:<lure>" (or "/use 1" for the hat, slot 1 being
+the head) and then "/use 16" (16 is the main hand, where the pole is) for
+that one press, instead of casting. Every lure, the hat included, waits
+for you to pick the pole after it's used; "/use 16" picks it.
 
 How Bobber knows what happened: each lure has its own spell, and the game
 reports it like any cast.
@@ -30,8 +34,12 @@ reports it like any cast.
   UNIT_SPELLCAST_FAILED,    the lure didn't go on
   UNIT_SPELLCAST_INTERRUPTED
 
-The lure list (item IDs, spell IDs, required skill, bonus) comes from the
-OneCast addon (MIT), which checked it against WoW: Forever's game data.
+The lure list is WoW: Forever's own game data (build 1.60.1.70862, read
+through wago.tools): every spell whose description mentions a fishing pole
+(Spell), the items that cast those spells (ItemEffect, ItemXItemEffect),
+and each item's required skill (ItemSparse). Two items share a spell:
+"Secret" Bait casts the Shiny Bauble spell (8087). The OneCast addon (MIT)
+first documented the six classic lures for Forever.
 ]]
 
 local _, ns = ...
@@ -39,9 +47,16 @@ local _, ns = ...
 local Lures = {}
 ns.Lures = Lures
 
--- Equal bonuses keep the easier-to-get lure first; that's the one "best" picks.
+local HEAD_SLOT = INVSLOT_HEAD or 1
+
+-- At an equal bonus, the lure earlier in this list is the one "best" picks:
+-- the hat first (it isn't used up), then the easier-to-get lure.
+-- `wornInSlot` marks an item you wear instead of carrying in bags.
 local LURES = {
+    { itemID = 259846, spellID = 1265220, name = "Wide-Brimmed Fishing Hat", bonus = 25, requiredSkill = 1,
+        wornInSlot = HEAD_SLOT },
     { itemID = 6529, spellID = 8087, name = "Shiny Bauble", bonus = 25, requiredSkill = 0 },
+    { itemID = 268880, spellID = 8087, name = "\"Secret\" Bait", bonus = 25, requiredSkill = 0 },
     { itemID = 6530, spellID = 8088, name = "Nightcrawlers", bonus = 50, requiredSkill = 50 },
     { itemID = 6811, spellID = 8532, name = "Aquadynamic Fish Lens", bonus = 50, requiredSkill = 50 },
     { itemID = 6532, spellID = 8090, name = "Bright Baubles", bonus = 75, requiredSkill = 100 },
@@ -50,9 +65,12 @@ local LURES = {
 }
 Lures.LIST = LURES
 
+-- Spell ID -> the lures that cast it. Usually one; "Secret" Bait and Shiny
+-- Bauble share a spell.
 local luresBySpellID = {}
 for _, lure in ipairs(LURES) do
-    luresBySpellID[lure.spellID] = lure
+    luresBySpellID[lure.spellID] = luresBySpellID[lure.spellID] or {}
+    table.insert(luresBySpellID[lure.spellID], lure)
 end
 
 local MAIN_HAND = ns.MAIN_HAND_SLOT
@@ -86,14 +104,34 @@ local function GetBaseFishingSkill()
     return skill or 0
 end
 
--- The lure that would go on now, or nil if none in the bags can be used.
-function Lures.FindBestLureInBags()
+-- A worn lure (the hat) is ready when it's on and its cooldown is over.
+local function IsWornLureReady(lure)
+    if GetInventoryItemID("player", lure.wornInSlot) ~= lure.itemID then
+        return false
+    end
+    local cooldownStart, cooldownDuration = GetInventoryItemCooldown("player", lure.wornInSlot)
+    if ns.IsSecret(cooldownStart) or ns.IsSecret(cooldownDuration) then
+        return false
+    end
+    return cooldownStart == 0 or cooldownStart + cooldownDuration <= GetTime()
+end
+
+local function IsLureAvailable(lure)
+    if lure.wornInSlot then
+        return IsWornLureReady(lure)
+    end
+    return GetItemCountByID(lure.itemID) > 0
+end
+
+-- The lure that would go on now, or nil if none can be used. A bigger
+-- bonus wins; at an equal bonus the one earlier in LURES wins.
+function Lures.FindBestLure()
     local baseSkill = GetBaseFishingSkill()
     local bestLure
     for _, lure in ipairs(LURES) do
         local isUsable = lure.requiredSkill <= baseSkill
             and not skippedItemIDs[lure.itemID]
-            and GetItemCountByID(lure.itemID) > 0
+            and IsLureAvailable(lure)
         if isUsable and (not bestLure or lure.bonus > bestLure.bonus) then
             bestLure = lure
         end
@@ -131,7 +169,7 @@ function Lures.GetLureForNextPress()
     if not ns.settings.applyLures or not ns.IsPoleEquipped() or Lures.IsLureOnPole() then
         return nil
     end
-    return Lures.FindBestLureInBags()
+    return Lures.FindBestLure()
 end
 
 -------------------------------------------------------------------------------
@@ -179,18 +217,30 @@ function Lures.GetLureMacroForThisPress()
         CheckThatLureStarted(lure, setUpAt)
     end)
     ns.Fire("BOBBER_LURE_CHANGED")
-    return "/use item:" .. lure.itemID .. "\n/use " .. MAIN_HAND
+    local useLureLine = lure.wornInSlot and ("/use " .. lure.wornInSlot) or ("/use item:" .. lure.itemID)
+    return useLureLine .. "\n/use " .. MAIN_HAND
 end
 
 -------------------------------------------------------------------------------
 -- Lure spell events
 -------------------------------------------------------------------------------
 
+-- The lure a lure spell belongs to. When lures share a spell, the one a
+-- press set up (or the one going on) is the one that cast it.
 local function GetLureForSpell(spellID)
     if spellID == nil or ns.IsSecret(spellID) then
         return nil
     end
-    return luresBySpellID[spellID]
+    local luresWithSpell = luresBySpellID[spellID]
+    if not luresWithSpell then
+        return nil
+    end
+    for _, lure in ipairs(luresWithSpell) do
+        if lure == lureSetUpByPress or lure == lureGoingOn then
+            return lure
+        end
+    end
+    return luresWithSpell[1]
 end
 
 ns.On("UNIT_SPELLCAST_START", function(_, _, spellID)

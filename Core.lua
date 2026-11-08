@@ -128,6 +128,7 @@ ns.DEFAULT_SETTINGS = {
     showBobberIcon = false,        -- the game's interact icon over the bobber
     autoLootFish = true,           -- take everything from fishing loot windows
     enhanceSounds = true,          -- louder splash while a pole is equipped
+    backgroundSound = true,        -- game sound keeps playing when WoW isn't the active window
     weaponsOnCombat = true,        -- put weapons back the moment combat starts
     showWindowWithPole = true,
     hideWindowWithoutPole = true,

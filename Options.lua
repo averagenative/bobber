@@ -64,7 +64,7 @@ local OPTION_LIST = {
         kind = "checkbox",
         key = "applyLures",
         label = "Put on a lure when you cast",
-        tooltip = "When your pole has no lure, your next cast press (double right-click or the cast key) puts on the best lure in your bags instead, and the press after that casts. Lures take 5 seconds to put on, and presses during that time wait. If you have no lure you can use, Bobber just casts.",
+        tooltip = "When your pole has no lure, your next cast press (double right-click or the cast key) puts on the best lure you have instead, and the press after that casts. That includes the Wide-Brimmed Fishing Hat while you wear it. Lures take 5 seconds to put on, and presses during that time wait. If you have no lure you can use, Bobber just casts.",
     },
     {
         kind = "checkbox",
@@ -90,7 +90,13 @@ local OPTION_LIST = {
         kind = "checkbox",
         key = "enhanceSounds",
         label = "Enhance fishing sounds",
-        tooltip = "While a fishing pole is equipped: sound effects at full volume, music and ambient sound off, and sound keeps playing in the background. Your settings come back when the pole comes off.",
+        tooltip = "While a fishing pole is equipped: sound effects at full volume, and music and ambient sound off. Your settings come back when the pole comes off.",
+    },
+    {
+        kind = "checkbox",
+        key = "backgroundSound",
+        label = "Sound in the background",
+        tooltip = "Keeps game sound playing when WoW isn't the active window, so you hear the splash while you're in another app. This is on all the time, not just while fishing. Turn it off to get your own setting back.",
     },
 
     { kind = "section", label = "Gear" },

@@ -2,7 +2,7 @@
 ## Title: Bobber
 ## Notes: Fishing helper: double right-click to cast, right-click anywhere to loot, lures on cast, louder splash, pole and weapon swap, and a fish catch tracker.
 ## Author: averagenative
-## Version: 0.3.0
+## Version: 0.4.0
 ## IconTexture: Interface\Icons\Trade_Fishing
 ## Category: Professions
 ## SavedVariables: BobberDB

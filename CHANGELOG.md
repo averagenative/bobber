@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+- Every lure in WoW: Forever's game data: the six classic lures plus "Secret" Bait and the Wide-Brimmed Fishing Hat. The hat's lure is used while you wear it and it's off cooldown, and it goes first when lures tie on bonus, because it isn't used up.
+- Lure order: biggest bonus your skill can use first; at equal bonus, the hat, then the easier-to-get lure.
+- Sound in the background is its own option, on by default, and applies all the time instead of only while a pole is equipped.
+
 ## 0.3.0
 
 - Lures on cast: when your pole has no lure, your next double right-click or Cast Fishing key press puts on the best lure in your bags that your skill can use, and the press after that casts. Presses wait while a lure goes on, so they can't interrupt it. With no usable lure in your bags, Bobber just casts. A lure that fails twice in a row is skipped for the session. On by default; turn it off with Put on a lure when you cast.

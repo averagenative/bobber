@@ -6,8 +6,9 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 
 - **Double right-click to cast.** This works only while a fishing pole is equipped, so double right-clicks do nothing unusual when you aren't fishing. The window shows whether it's ready.
 - **Right-click anywhere to loot.** While the line is out, a right-click anywhere hooks the bobber, and the catch goes straight into your bags. You can switch to a double right-click, or turn it off and click the bobber yourself.
-- **Lures on cast.** When your pole has no lure, your next cast press puts on the best lure in your bags instead, and the press after that casts. If you have no lure you can use, Bobber just casts.
-- **Enhanced fishing sounds.** While a pole is equipped, sound effects play at full volume, music and ambient sound are off, and sound keeps playing in the background. Your own settings come back when the pole comes off, and also after a reload, a disconnect, or a logout.
+- **Lures on cast.** When your pole has no lure, your next cast press puts on the best lure you have instead, and the press after that casts. If you have no lure you can use, Bobber just casts.
+- **Enhanced fishing sounds.** While a pole is equipped, sound effects play at full volume, and music and ambient sound are off. Your own settings come back when the pole comes off, and also after a reload, a disconnect, or a logout.
+- **Sound in the background.** Game sound keeps playing when WoW isn't the active window, so you hear the splash from another app.
 - **Pole and weapon swapping.** The window has slots for your pole, main hand, and off hand. Click the pole to fish and click a weapon to fight. Bobber remembers what you use, or you can drag items onto the slots. The weapon slots work in combat, and your weapons go back on as soon as combat starts.
 - **A catch window.** Session, zone, and all-time tabs list each fish with its count and share. The window also shows casts, catches, fish that got away, hooks that came too early, catches per hour, fishing time, your fishing skill with its bonus, and the time left on your lure.
 - **A window you control.** Drag it from anywhere, lock it, collapse it, scale it with Ctrl and the mouse wheel, or fade its background with Shift and the mouse wheel. The gear button in its header opens the options. It opens when you equip a pole and closes when you take it off. Pick one of four themes: Harbor, Midnight, Ember, or Parchment (light).
@@ -20,6 +21,21 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 4. To fight, click a weapon slot. If combat starts while you're fishing, Bobber puts your weapons back on.
 
 While the line is out, holding the right mouse button to turn the camera also hooks the bobber, because the press itself is the hook. Turn the camera with the left mouse button while you fish, or switch **Right-click to loot** to a double right-click.
+
+### Lures
+
+Bobber knows every lure in WoW: Forever's game data. It puts on the one with the biggest bonus that your fishing skill can use. At an equal bonus, the Wide-Brimmed Fishing Hat goes first because it isn't used up, then the easier-to-get lure.
+
+| Lure | Bonus | Lasts | Needs Fishing |
+|---|---|---|---|
+| Aquadynamic Fish Attractor | +100 | 5 min | 100 |
+| Bright Baubles | +75 | 10 min | 100 |
+| Flesh Eating Worm | +75 | 10 min | 100 |
+| Nightcrawlers | +50 | 10 min | 50 |
+| Aquadynamic Fish Lens | +50 | 10 min | 50 |
+| Wide-Brimmed Fishing Hat (worn, 10-minute cooldown) | +25 | 10 min | 1 |
+| Shiny Bauble | +25 | 10 min | none |
+| "Secret" Bait | +25 | 10 min | none |
 
 ### Gear slots
 
@@ -48,6 +64,7 @@ Open the options with the gear button in the Bobber window's header, from **Opti
 | Show an icon over the bobber | Off | Shows the game's interact icon over the bobber. |
 | Auto-loot fish | On | Takes everything from fishing loot windows only. |
 | Enhance fishing sounds | On | Louder splash while a pole is equipped. |
+| Sound in the background | On | Game sound keeps playing when WoW isn't the active window. |
 | Weapons back when combat starts | On | Puts your weapons on when combat starts. |
 | Open the window when you equip a pole | On | |
 | Close the window when you take the pole off | On | |
@@ -122,7 +139,7 @@ To release a version, update `## Version:` in `Bobber.toc`, add a matching `## <
 
 ## Credits
 
-Bobber's feature set is inspired by Fishing Buddy by Sutorix. The OneCast and EzFishing addons (both MIT-licensed) documented how casting and soft-target hooking behave on WoW: Forever, and the lure list in `Lures.lua` (item IDs, spell IDs, required skill) comes from OneCast. Bobber's code is its own.
+Bobber's feature set is inspired by Fishing Buddy by Sutorix. The OneCast and EzFishing addons (both MIT-licensed) documented how casting and soft-target hooking behave on WoW: Forever, and OneCast first documented the classic lures for Forever. The full lure list in `Lures.lua` is read from Forever's game data through wago.tools. Bobber's code is its own.
 
 ## License
 

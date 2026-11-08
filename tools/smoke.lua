@@ -232,6 +232,11 @@ local NIGHTCRAWLERS = 6530       -- lure, +50, needs skill 50
 local FISH_ATTRACTOR = 6533      -- lure, +100, needs skill 100
 local NIGHTCRAWLERS_SPELL = 8088
 local FISH_ATTRACTOR_SPELL = 8089
+local SHINY_BAUBLE = 6529        -- lure, +25
+local SECRET_BAIT = 268880       -- lure, +25, casts the Shiny Bauble spell
+local SHINY_BAUBLE_SPELL = 8087
+local FISHING_HAT = 259846       -- worn, on-use lure, +25, 10-minute cooldown
+local FISHING_HAT_SPELL = 1265220
 
 local itemDatabase = {
     [POLE] = { equipLocation = "INVTYPE_2HWEAPON", classID = 2, subclassID = 20 },
@@ -242,6 +247,9 @@ local itemDatabase = {
     [SUNFISH] = { equipLocation = "", classID = 7, subclassID = 8 },
     [NIGHTCRAWLERS] = { equipLocation = "", classID = 0, subclassID = 8 },
     [FISH_ATTRACTOR] = { equipLocation = "", classID = 0, subclassID = 8 },
+    [SHINY_BAUBLE] = { equipLocation = "", classID = 0, subclassID = 8 },
+    [SECRET_BAIT] = { equipLocation = "", classID = 0, subclassID = 8 },
+    [FISHING_HAT] = { equipLocation = "INVTYPE_HEAD", classID = 4, subclassID = 1 },
 }
 
 local equippedItems = { [16] = SWORD, [17] = SHIELD }
@@ -432,6 +440,13 @@ function GetWeaponEnchantInfo()
     return false
 end
 function SpellIsTargeting() return false end
+local hatCooldownEndsAt = 0
+function GetInventoryItemCooldown(_, inventorySlot)
+    if inventorySlot == 1 and hatCooldownEndsAt > currentTime then
+        return hatCooldownEndsAt - 600, 600, 1
+    end
+    return 0, 0, 1
+end
 function SpellStopTargeting() end
 function GetRealZoneText() return "Elwynn Forest" end
 
@@ -507,6 +522,8 @@ local function RunMacro(macroText)
             EquipItem(tonumber(equipItemID), tonumber(inventorySlot))
         elseif useItemID then
             itemWaitingForTarget = tonumber(useItemID)
+        elseif line == "/use 1" then
+            itemWaitingForTarget = equippedItems[1]
         elseif line == "/use 16" then
             assert(itemWaitingForTarget, "/use 16 with nothing to put on the main hand")
             usedItems[#usedItems + 1] = itemWaitingForTarget
@@ -610,6 +627,7 @@ Step("load and log in", function()
     Check(BobberCharDB.gear.remembered.offHand == SHIELD, "remembers the shield")
     Check(BobberCharDB.gear.remembered.pole == POLE, "finds the pole in the bags")
     Check(BobberWindow:IsShown() == false, "window starts hidden without a pole")
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "sound in the background is on without a pole")
     Check(registeredSettings.windowTheme ~= nil, "options panel registered")
 end)
 
@@ -860,6 +878,59 @@ Step("no usable lure in the bags: just cast", function()
     Check(PressCastKey() == "cast", "with the option off, presses always cast")
     BobberDB.settings.applyLures = true
     isLureOnPole = true
+end)
+
+Step("the hat goes first at equal bonus, then Shiny Bauble, then Secret Bait", function()
+    AdvanceTime(5)
+    bagItemCounts[FISH_ATTRACTOR] = 0
+    bagItemCounts[SHINY_BAUBLE] = 1
+    bagItemCounts[SECRET_BAIT] = 1
+    equippedItems[1] = FISHING_HAT
+    isLureOnPole = false
+
+    local result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == FISHING_HAT, "the worn hat goes on first (\"/use 1\")")
+    FireLureSpell("UNIT_SPELLCAST_START", FISHING_HAT_SPELL)
+    AdvanceTime(5)
+    FireLureSpell("UNIT_SPELLCAST_SUCCEEDED", FISHING_HAT_SPELL)
+    hatCooldownEndsAt = currentTime + 600
+    AdvanceTime(4)
+
+    result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == SHINY_BAUBLE, "with the hat on cooldown, Shiny Bauble is next")
+    FireLureSpell("UNIT_SPELLCAST_START", SHINY_BAUBLE_SPELL)
+    FireLureSpell("UNIT_SPELLCAST_FAILED", SHINY_BAUBLE_SPELL)
+    AdvanceTime(1)
+    result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == SHINY_BAUBLE, "Shiny Bauble gets a second try")
+    AdvanceTime(2)
+
+    -- Secret Bait casts the Shiny Bauble spell, so these failures must be
+    -- counted against Secret Bait, not Shiny Bauble.
+    result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == SECRET_BAIT, "after Shiny Bauble fails twice, Secret Bait (same spell) is next")
+    FireLureSpell("UNIT_SPELLCAST_START", SHINY_BAUBLE_SPELL)
+    AdvanceTime(1)
+    FireLureSpell("UNIT_SPELLCAST_INTERRUPTED", SHINY_BAUBLE_SPELL)
+    AdvanceTime(1)
+    result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == SECRET_BAIT, "Secret Bait gets a second try")
+    FireLureSpell("UNIT_SPELLCAST_START", SHINY_BAUBLE_SPELL)
+    FireLureSpell("UNIT_SPELLCAST_FAILED", SHINY_BAUBLE_SPELL)
+    AdvanceTime(1)
+    Check(PressCastKey() == "cast", "Secret Bait's failures were counted against Secret Bait, so the press casts")
+    equippedItems[1] = nil
+    isLureOnPole = true
+end)
+
+Step("sound in the background is its own option", function()
+    BobberDB.settings.backgroundSound = false
+    registeredSettings.backgroundSound.onChange()
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "turning it off puts your setting back")
+    Check(cvars.Sound_SFXVolume == "1", "enhanced fishing sounds stay on")
+    BobberDB.settings.backgroundSound = true
+    registeredSettings.backgroundSound.onChange()
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "turning it on again")
 end)
 
 Step("slash commands", function()
