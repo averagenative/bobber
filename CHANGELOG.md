@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- A gear button in the window's header opens Bobber's options.
+- A Window opacity option, from 0% (clear) to 100% (solid), defaulting to 90%. It fades the background, header, and border; text and icons stay fully visible. Hold Shift and turn the mouse wheel over the window to change it there.
+
 ## 0.1.0
 
 First release, for WoW: Forever (interface 16001).

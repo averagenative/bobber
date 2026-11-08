@@ -125,6 +125,18 @@ local OPTION_LIST = {
             return themeChoices
         end)(),
     },
+    {
+        kind = "slider",
+        key = "windowOpacity",
+        label = "Window opacity",
+        tooltip = "How solid the window's background is. Text and icons always stay fully visible. You can also hold Shift and turn the mouse wheel over the window.",
+        minimum = 0,
+        maximum = 1,
+        step = 0.05,
+        formatValue = function(value)
+            return math.floor(value * 100 + 0.5) .. "%"
+        end,
+    },
 }
 
 local function NotifyChanged(settingKey)
@@ -190,10 +202,18 @@ local function BuildOptionsPanel()
     Settings.RegisterAddOnCategory(settingsCategory)
 end
 
+-- Opens Options > AddOns > Bobber. Used by the window's gear button,
+-- /bobber options, and right-clicking Bobber in the addons button by the
+-- minimap. The options panel can't open during combat.
 function Options.Open()
-    if settingsCategory then
-        Settings.OpenToCategory(settingsCategory:GetID())
+    if not settingsCategory then
+        return
     end
+    if InCombatLockdown() then
+        ns.Print("the options can't open during combat.")
+        return
+    end
+    Settings.OpenToCategory(settingsCategory:GetID())
 end
 
 ns.On("BOBBER_DATA_READY", BuildOptionsPanel)

@@ -9,7 +9,7 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 - **Enhanced fishing sounds.** While a pole is equipped, sound effects play at full volume, music and ambient sound are off, and sound keeps playing in the background. Your own settings come back when the pole comes off, and also after a reload, a disconnect, or a logout.
 - **Pole and weapon swapping.** The window has slots for your pole, main hand, and off hand. Click the pole to fish and click a weapon to fight. Bobber remembers what you use, or you can drag items onto the slots. The weapon slots work in combat, and your weapons go back on as soon as combat starts.
 - **A catch window.** Session, zone, and all-time tabs list each fish with its count and share. The window also shows casts, catches, fish that got away, hooks that came too early, catches per hour, fishing time, your fishing skill with its bonus, and the time left on your lure.
-- **A window you control.** Drag it from anywhere, lock it, collapse it, or scale it with Ctrl and the mouse wheel. It opens when you equip a pole and closes when you take it off. Pick one of four themes: Harbor, Midnight, Ember, or Parchment (light).
+- **A window you control.** Drag it from anywhere, lock it, collapse it, scale it with Ctrl and the mouse wheel, or fade its background with Shift and the mouse wheel. The gear button in its header opens the options. It opens when you equip a pole and closes when you take it off. Pick one of four themes: Harbor, Midnight, Ember, or Parchment (light).
 
 ## Use Bobber
 
@@ -33,7 +33,7 @@ If you haven't chosen items, Bobber remembers the last pole you equipped (or fin
 
 ## Options
 
-Open the options from **Options > AddOns > Bobber**, with `/bobber options`, or by right-clicking Bobber in the addons button by the minimap.
+Open the options with the gear button in the Bobber window's header, from **Options > AddOns > Bobber**, with `/bobber options`, or by right-clicking Bobber in the addons button by the minimap.
 
 | Option | Default | What it does |
 |---|---|---|
@@ -51,6 +51,7 @@ Open the options from **Options > AddOns > Bobber**, with `/bobber options`, or 
 | Close the window when you take the pole off | On | |
 | Lock the window | Off | A locked window can't be dragged. |
 | Theme | Harbor | The window colors. |
+| Window opacity | 90% | How solid the window's background is. Text and icons stay fully visible. Shift and the mouse wheel over the window change it too. |
 
 ## Key bindings
 

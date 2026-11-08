@@ -4,7 +4,7 @@ The Bobber window.
 One movable window holds everything you look at while fishing:
 
   +--------------------------------------------------+
-  | [icon] Bobber  Elwynn Forest         [lock][-][x] |  header
+  | [icon] Bobber  Elwynn Forest   [gear][lock][-][x] |  header
   | Fishing 142/150 +25 (+3)               Lure 8:12  |  skill and lure
   | [pole][main][off]  Double right-click to cast     |  gear slots and
   |                    Right-click anywhere to loot   |  what clicks do
@@ -18,10 +18,13 @@ One movable window holds everything you look at while fishing:
 Controls:
 
 * Drag anywhere on the window to move it (unless it's locked).
-* Ctrl + mouse wheel scales the window; the mouse wheel alone scrolls the
-  catch list.
-* The header buttons lock the window, collapse it to the header, skill
-  line, and footer, and close it.
+* Ctrl + mouse wheel scales the window, Shift + mouse wheel changes its
+  background opacity, and the mouse wheel alone scrolls the catch list.
+* The header buttons open Bobber's options (the gear), lock the window,
+  collapse it to the header, skill line, and footer, and close it.
+* The opacity option (and Shift + mouse wheel) fades only the background,
+  header, and border. Text and icons stay fully visible, so at 0% the
+  window is just its contents floating over the game.
 * The window opens when you equip a fishing pole and closes when you take
   it off (both can be turned off in the options).
 
@@ -65,11 +68,18 @@ local COLLAPSED_HEIGHT = INFO_LINE_TOP + INFO_LINE_HEIGHT + 2 + FOOTER_HEIGHT
 local MIN_SCALE = 0.6
 local MAX_SCALE = 2.0
 local SCALE_STEP = 0.05
+local OPACITY_STEP = 0.05
 
 local REFRESH_INTERVAL_SECONDS = 1
 
 local LOCKED_ICON = "Interface\\Buttons\\LockButton-Locked-Up"
 local UNLOCKED_ICON = "Interface\\Buttons\\LockButton-Unlocked-Up"
+-- The gray gear is the world map's filter button art. If this client
+-- doesn't have it, the gear item icon (in the game since launch) stands in.
+local SETTINGS_ICONS = {
+    "Interface\\WorldMap\\Gear_64Grey",
+    "Interface\\Icons\\INV_Misc_Gear_01",
+}
 local FISHING_ICON = "Interface\\Icons\\Trade_Fishing"
 local UNKNOWN_ITEM_ICON = 134400  -- the question mark icon
 
@@ -196,9 +206,20 @@ local function ChangeScaleBy(scaleChange)
     window:SetScale(saved.scale)
 end
 
+-- Opacity is a setting, so the options panel shows the new value too.
+local function ChangeOpacityBy(opacityChange)
+    local newOpacity = ns.settings.windowOpacity + opacityChange
+    ns.settings.windowOpacity = math.max(0, math.min(1, newOpacity))
+    Window.ApplyTheme()
+end
+
 local function OnMouseWheel(_, wheelDirection)
     if IsControlKeyDown() then
         ChangeScaleBy(wheelDirection * SCALE_STEP)
+        return
+    end
+    if IsShiftKeyDown() then
+        ChangeOpacityBy(wheelDirection * OPACITY_STEP)
         return
     end
     -- Wheel up (1) scrolls toward the top of the list.
@@ -241,10 +262,21 @@ local function HideTooltip()
     GameTooltip:Hide()
 end
 
+-- Texture:SetTexture() returns false when the file doesn't exist on this
+-- client, so try each path in turn until one loads.
+local function SetFirstAvailableTexture(texture, texturePaths)
+    for _, texturePath in ipairs(texturePaths) do
+        if texture:SetTexture(texturePath) then
+            return
+        end
+    end
+    texture:SetTexture(texturePaths[#texturePaths])
+end
+
 -- A small header button. `getTooltipText` returns the tooltip, so it can
--- change with the button's state.
-local function CreateHeaderButton(getTooltipText, onClick)
-    local button = CreateFrame("Button", nil, window)
+-- change with the button's state. `globalName` is optional.
+local function CreateHeaderButton(getTooltipText, onClick, globalName)
+    local button = CreateFrame("Button", globalName, window)
     button:SetSize(16, 16)
     button:SetScript("OnClick", onClick)
     button:SetScript("OnEnter", function(self)
@@ -297,9 +329,19 @@ local function BuildHeader()
     ui.lockButton.icon = ui.lockButton:CreateTexture(nil, "ARTWORK")
     ui.lockButton.icon:SetAllPoints()
 
+    ui.settingsButton = CreateHeaderButton(function() return "Bobber options" end, function()
+        ns.Options.Open()
+    end, "BobberWindowSettingsButton")
+    ui.settingsButton:SetPoint("RIGHT", ui.lockButton, "LEFT", -2, 0)
+    ui.settingsButton.icon = ui.settingsButton:CreateTexture(nil, "ARTWORK")
+    ui.settingsButton.icon:SetPoint("TOPLEFT", 1, -1)
+    ui.settingsButton.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+    SetFirstAvailableTexture(ui.settingsButton.icon, SETTINGS_ICONS)
+    ui.settingsButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+
     ui.zoneText = window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     ui.zoneText:SetPoint("LEFT", ui.titleText, "RIGHT", 6, 0)
-    ui.zoneText:SetPoint("RIGHT", ui.lockButton, "LEFT", -4, 0)
+    ui.zoneText:SetPoint("RIGHT", ui.settingsButton, "LEFT", -4, 0)
     ui.zoneText:SetJustifyH("LEFT")
     ui.zoneText:SetWordWrap(false)
 end
@@ -486,11 +528,17 @@ end
 -- Theme
 -------------------------------------------------------------------------------
 
+-- Colors come from the theme; how see-through the background, header, and
+-- border are comes from the opacity setting. The header and border stay a
+-- little stronger than the body so the window's edges remain visible.
 function Window.ApplyTheme()
     local theme = CurrentTheme()
-    window:SetBackdropColor(unpack(theme.background))
-    window:SetBackdropBorderColor(unpack(theme.border))
-    ui.headerBackground:SetColorTexture(unpack(theme.header))
+    local opacity = ns.settings.windowOpacity
+    local edgeOpacity = math.min(1, opacity * 1.1)
+    local background, header, border = theme.background, theme.header, theme.border
+    window:SetBackdropColor(background[1], background[2], background[3], opacity)
+    window:SetBackdropBorderColor(border[1], border[2], border[3], edgeOpacity)
+    ui.headerBackground:SetColorTexture(header[1], header[2], header[3], edgeOpacity)
     SetTextColor(ui.titleText, theme.accent)
     SetTextColor(ui.zoneText, theme.muted)
     SetTextColor(ui.skillText, theme.text)
@@ -734,7 +782,7 @@ ns.On("BOBBER_CAST_START", Window.Refresh)
 ns.On("BOBBER_CAST_STOP", Window.Refresh)
 
 ns.On("BOBBER_SETTINGS_CHANGED", function(settingKey)
-    if settingKey == "windowTheme" then
+    if settingKey == "windowTheme" or settingKey == "windowOpacity" then
         Window.ApplyTheme()
     elseif settingKey == "windowLocked" then
         UpdateLockButton()

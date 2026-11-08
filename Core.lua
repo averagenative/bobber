@@ -131,6 +131,7 @@ ns.DEFAULT_SETTINGS = {
     hideWindowWithoutPole = true,
     windowLocked = false,
     windowTheme = "harbor",
+    windowOpacity = 0.9,           -- background opacity, 0 (clear) to 1 (solid)
 }
 
 -- A tally counts one scope of fishing: a session, a zone, or a lifetime.

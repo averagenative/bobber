@@ -167,6 +167,7 @@ function FrameMethods.GetPoint(frame)
     return firstPoint[1], UIParent, firstPoint[3] or firstPoint[1], 10, 20
 end
 function FrameMethods.GetName(frame) return frame.globalName end
+function FrameMethods.SetBackdropColor(frame, red, green, blue, alpha) frame.backdropColor = { red, green, blue, alpha } end
 function FrameMethods.CreateTexture(frame) return NewFrame() end
 
 -- Every font string is kept, so tests can look for text on screen.
@@ -387,6 +388,8 @@ function IsMouseButtonDown(mouseButton) return mouseButtonsDown[mouseButton] == 
 function GetMouseFoci() return { WorldFrame } end
 function UnitExists() return false end
 function IsControlKeyDown() return false end
+local isShiftKeyHeld = false
+function IsShiftKeyDown() return isShiftKeyHeld end
 
 local channelSpellID = nil
 function UnitChannelInfo()
@@ -447,6 +450,7 @@ SlashCmdList = {}
 MinimalSliderWithSteppersMixin = { Label = { Right = 1 } }
 
 local registeredSettings = {}
+optionsOpenCount = 0
 Settings = {
     RegisterVerticalLayoutCategory = function(name)
         return { name = name, GetID = function() return 1 end }, { AddInitializer = function() end }
@@ -471,7 +475,7 @@ Settings = {
         }
     end,
     RegisterAddOnCategory = function() end,
-    OpenToCategory = function() end,
+    OpenToCategory = function() optionsOpenCount = optionsOpenCount + 1 end,
 }
 function CreateSettingsListSectionHeaderInitializer() return {} end
 
@@ -739,6 +743,28 @@ Step("cast key equips the pole when it's off", function()
     Check(#castSpells == castsBefore, "that press didn't cast")
     Click(BobberCastButton)
     Check(#castSpells == castsBefore + 1, "the next press casts")
+end)
+
+Step("gear button and opacity", function()
+    Check(BobberDB.settings.windowOpacity == 0.9, "opacity defaults to 90%")
+    Check(math.abs(BobberWindow.backdropColor[4] - 0.9) < 0.001, "background drawn at 90%")
+    BobberWindowSettingsButton.scripts.OnClick(BobberWindowSettingsButton)
+    Check(optionsOpenCount == 1, "gear button opens the options")
+    isShiftKeyHeld = true
+    BobberWindow.scripts.OnMouseWheel(BobberWindow, -1)
+    BobberWindow.scripts.OnMouseWheel(BobberWindow, -1)
+    isShiftKeyHeld = false
+    Check(math.abs(BobberDB.settings.windowOpacity - 0.8) < 0.001, "Shift + wheel lowers the opacity")
+    Check(math.abs(BobberWindow.backdropColor[4] - 0.8) < 0.001, "background redrawn at 80%")
+    BobberDB.settings.windowOpacity = 0
+    registeredSettings.windowOpacity.onChange()
+    Check(BobberWindow.backdropColor[4] == 0, "the opacity option applies")
+    inCombat = true
+    BobberWindowSettingsButton.scripts.OnClick(BobberWindowSettingsButton)
+    inCombat = false
+    Check(optionsOpenCount == 1 and chatMessages[#chatMessages]:find("combat") ~= nil, "options don't open during combat")
+    BobberDB.settings.windowOpacity = 0.9
+    registeredSettings.windowOpacity.onChange()
 end)
 
 Step("slash commands", function()
