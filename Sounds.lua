@@ -9,9 +9,10 @@ are undone even after a reload or disconnect:
   are off, so the splash of a bite is easy to hear. Taking the pole off
   puts your own sound settings back.
 * Sound in the background ("background" lease): game sound keeps playing
-  when WoW isn't the active window, all the time, not just while fishing,
-  so you hear the splash while you're in another app. Turning the option
-  off puts your own setting back.
+  when WoW isn't the active window, so you hear the splash while you're in
+  another app. By default this is only while a fishing pole is equipped;
+  the option can make it always, or off. When it doesn't apply, your own
+  setting is back.
 ]]
 
 local _, ns = ...
@@ -43,15 +44,23 @@ local function HoldLeaseWhile(shouldHold, leaseName, valuesByCVarName)
     end
 end
 
+local function ShouldPlaySoundInBackground()
+    local mode = ns.settings.backgroundSoundMode
+    if mode == ns.BACKGROUND_SOUND_ALWAYS then
+        return true
+    end
+    return mode == ns.BACKGROUND_SOUND_WITH_POLE and ns.IsPoleEquipped()
+end
+
 function Sounds.Update()
     HoldLeaseWhile(ns.settings.enhanceSounds and ns.IsPoleEquipped(), "sounds", FISHING_SOUND_CVARS)
-    HoldLeaseWhile(ns.settings.backgroundSound, "background", BACKGROUND_SOUND_CVARS)
+    HoldLeaseWhile(ShouldPlaySoundInBackground(), "background", BACKGROUND_SOUND_CVARS)
 end
 
 ns.On("PLAYER_LOGIN", Sounds.Update)
 ns.On("PLAYER_EQUIPMENT_CHANGED", Sounds.Update)
 ns.On("BOBBER_SETTINGS_CHANGED", function(settingKey)
-    if settingKey == "enhanceSounds" or settingKey == "backgroundSound" then
+    if settingKey == "enhanceSounds" or settingKey == "backgroundSoundMode" then
         Sounds.Update()
     end
 end)

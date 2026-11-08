@@ -93,10 +93,15 @@ local OPTION_LIST = {
         tooltip = "While a fishing pole is equipped: sound effects at full volume, and music and ambient sound off. Your settings come back when the pole comes off.",
     },
     {
-        kind = "checkbox",
-        key = "backgroundSound",
+        kind = "dropdown",
+        key = "backgroundSoundMode",
         label = "Sound in the background",
-        tooltip = "Keeps game sound playing when WoW isn't the active window, so you hear the splash while you're in another app. This is on all the time, not just while fishing. Turn it off to get your own setting back.",
+        tooltip = "Keeps game sound playing when WoW isn't the active window, so you hear the splash while you're in another app. When it doesn't apply, your own setting is back.",
+        choices = {
+            { value = ns.BACKGROUND_SOUND_WITH_POLE, label = "While a pole is equipped" },
+            { value = ns.BACKGROUND_SOUND_ALWAYS, label = "Always" },
+            { value = ns.BACKGROUND_SOUND_OFF, label = "Off (your own setting)" },
+        },
     },
 
     { kind = "section", label = "Gear" },

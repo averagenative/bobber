@@ -39,6 +39,11 @@ ns.HOOK_OFF = 0
 ns.HOOK_SINGLE_CLICK = 1
 ns.HOOK_DOUBLE_CLICK = 2
 
+-- When game sound keeps playing while WoW isn't the active window.
+ns.BACKGROUND_SOUND_OFF = 0
+ns.BACKGROUND_SOUND_WITH_POLE = 1
+ns.BACKGROUND_SOUND_ALWAYS = 2
+
 -------------------------------------------------------------------------------
 -- Chat output
 -------------------------------------------------------------------------------
@@ -128,7 +133,7 @@ ns.DEFAULT_SETTINGS = {
     showBobberIcon = false,        -- the game's interact icon over the bobber
     autoLootFish = true,           -- take everything from fishing loot windows
     enhanceSounds = true,          -- louder splash while a pole is equipped
-    backgroundSound = true,        -- game sound keeps playing when WoW isn't the active window
+    backgroundSoundMode = ns.BACKGROUND_SOUND_WITH_POLE,  -- sound while WoW isn't the active window
     weaponsOnCombat = true,        -- put weapons back the moment combat starts
     showWindowWithPole = true,
     hideWindowWithoutPole = true,
@@ -189,12 +194,25 @@ local function CopyMissingDefaults(target, defaults)
     return target
 end
 
+-- Carry settings saved by older versions over to their current form.
+local function MigrateOldSettings(settings)
+    -- 0.4.0 had an on/off "backgroundSound" that applied all the time. Off
+    -- stays off; on becomes the new default, while a pole is equipped.
+    if settings.backgroundSound ~= nil then
+        if settings.backgroundSound == false then
+            settings.backgroundSoundMode = ns.BACKGROUND_SOUND_OFF
+        end
+        settings.backgroundSound = nil
+    end
+end
+
 ns.On("ADDON_LOADED", function(loadedAddonName)
     if loadedAddonName ~= ADDON_NAME then
         return
     end
     BobberDB = CopyMissingDefaults(BobberDB or {}, DEFAULT_ACCOUNT_DATA)
     BobberCharDB = CopyMissingDefaults(BobberCharDB or {}, DEFAULT_CHARACTER_DATA)
+    MigrateOldSettings(BobberDB.settings)
     CopyMissingDefaults(BobberDB.settings, ns.DEFAULT_SETTINGS)
 
     ns.db = BobberDB

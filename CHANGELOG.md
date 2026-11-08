@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- Sound in the background is now a choice: While a pole is equipped (the default), Always, or Off. If you had it on in 0.4.0, it moves to While a pole is equipped; off stays off.
+
 ## 0.4.0
 
 - Every lure in WoW: Forever's game data: the six classic lures plus "Secret" Bait and the Wide-Brimmed Fishing Hat. The hat's lure is used while you wear it and it's off cooldown, and it goes first when lures tie on bonus, because it isn't used up.

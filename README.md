@@ -8,7 +8,7 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 - **Right-click anywhere to loot.** While the line is out, a right-click anywhere hooks the bobber, and the catch goes straight into your bags. You can switch to a double right-click, or turn it off and click the bobber yourself.
 - **Lures on cast.** When your pole has no lure, your next cast press puts on the best lure you have instead, and the press after that casts. If you have no lure you can use, Bobber just casts.
 - **Enhanced fishing sounds.** While a pole is equipped, sound effects play at full volume, and music and ambient sound are off. Your own settings come back when the pole comes off, and also after a reload, a disconnect, or a logout.
-- **Sound in the background.** Game sound keeps playing when WoW isn't the active window, so you hear the splash from another app.
+- **Sound in the background.** While a pole is equipped, game sound keeps playing when WoW isn't the active window, so you hear the splash from another app. You can make it always, or off.
 - **Pole and weapon swapping.** The window has slots for your pole, main hand, and off hand. Click the pole to fish and click a weapon to fight. Bobber remembers what you use, or you can drag items onto the slots. The weapon slots work in combat, and your weapons go back on as soon as combat starts.
 - **A catch window.** Session, zone, and all-time tabs list each fish with its count and share. The window also shows casts, catches, fish that got away, hooks that came too early, catches per hour, fishing time, your fishing skill with its bonus, and the time left on your lure.
 - **A window you control.** Drag it from anywhere, lock it, collapse it, scale it with Ctrl and the mouse wheel, or fade its background with Shift and the mouse wheel. The gear button in its header opens the options. It opens when you equip a pole and closes when you take it off. Pick one of four themes: Harbor, Midnight, Ember, or Parchment (light).
@@ -64,7 +64,7 @@ Open the options with the gear button in the Bobber window's header, from **Opti
 | Show an icon over the bobber | Off | Shows the game's interact icon over the bobber. |
 | Auto-loot fish | On | Takes everything from fishing loot windows only. |
 | Enhance fishing sounds | On | Louder splash while a pole is equipped. |
-| Sound in the background | On | Game sound keeps playing when WoW isn't the active window. |
+| Sound in the background | While a pole is equipped | When game sound keeps playing while WoW isn't the active window: while a pole is equipped, always, or off (your own setting). |
 | Weapons back when combat starts | On | Puts your weapons on when combat starts. |
 | Open the window when you equip a pole | On | |
 | Close the window when you take the pole off | On | |

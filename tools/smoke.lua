@@ -617,6 +617,8 @@ end
 -------------------------------------------------------------------------------
 
 Step("load and log in", function()
+    -- A setting saved by 0.4.0, to check it's carried over.
+    BobberDB = { settings = { backgroundSound = true } }
     FireEvent("ADDON_LOADED", "Bobber")
     FireEvent("PLAYER_LOGIN")
     Check(BobberDB.settings.enhanceSounds == true, "enhanced sounds default on")
@@ -627,7 +629,9 @@ Step("load and log in", function()
     Check(BobberCharDB.gear.remembered.offHand == SHIELD, "remembers the shield")
     Check(BobberCharDB.gear.remembered.pole == POLE, "finds the pole in the bags")
     Check(BobberWindow:IsShown() == false, "window starts hidden without a pole")
-    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "sound in the background is on without a pole")
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "no background sound without a pole (the default)")
+    Check(BobberDB.settings.backgroundSound == nil and BobberDB.settings.backgroundSoundMode == ns.BACKGROUND_SOUND_WITH_POLE,
+        "the 0.4.0 background sound setting became 'while a pole is equipped'")
     Check(registeredSettings.windowTheme ~= nil, "options panel registered")
 end)
 
@@ -648,6 +652,7 @@ Step("equip the pole from the window slot", function()
     Check(equippedItems[17] == nil, "off hand went to the bags")
     Check(BobberCharDB.gear.remembered.offHand == SHIELD, "still remembers the shield")
     Check(cvars.Sound_SFXVolume == "1" and cvars.Sound_MusicVolume == "0", "fishing sounds enhanced")
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "sound in the background with the pole on")
     Check(BobberWindow:IsShown(), "window opened with the pole")
 end)
 
@@ -745,6 +750,7 @@ Step("combat puts the weapons back", function()
     FireEvent("PLAYER_REGEN_ENABLED")
     AdvanceTime(1)
     Check(cvars.Sound_SFXVolume == "0.5" and cvars.Sound_MusicVolume == "0.4", "your sound settings came back")
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "background sound off again without the pole")
     Check(cvars.SoftTargetInteractRange == "10", "reach restored after combat")
     Check(BobberWindow:IsShown() == false, "window closed after the pole came off")
 end)
@@ -923,14 +929,25 @@ Step("the hat goes first at equal bonus, then Shiny Bauble, then Secret Bait", f
     isLureOnPole = true
 end)
 
-Step("sound in the background is its own option", function()
-    BobberDB.settings.backgroundSound = false
-    registeredSettings.backgroundSound.onChange()
-    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "turning it off puts your setting back")
+local function SetBackgroundSoundMode(mode)
+    BobberDB.settings.backgroundSoundMode = mode
+    registeredSettings.backgroundSoundMode.onChange()
+end
+
+Step("sound in the background: with the pole, always, or off", function()
+    Check(ns.IsPoleEquipped(), "pole is on")
+    SetBackgroundSoundMode(ns.BACKGROUND_SOUND_OFF)
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "off: your own setting, even with the pole")
     Check(cvars.Sound_SFXVolume == "1", "enhanced fishing sounds stay on")
-    BobberDB.settings.backgroundSound = true
-    registeredSettings.backgroundSound.onChange()
-    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "turning it on again")
+    SetBackgroundSoundMode(ns.BACKGROUND_SOUND_ALWAYS)
+    EquipItem(SWORD, 16)
+    AdvanceTime(1)
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "always: on without the pole")
+    SetBackgroundSoundMode(ns.BACKGROUND_SOUND_WITH_POLE)
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "with the pole: off while the pole is off")
+    EquipItem(POLE, 16)
+    AdvanceTime(1)
+    Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "with the pole: on once it's back")
 end)
 
 Step("slash commands", function()
