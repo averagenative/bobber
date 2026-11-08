@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Lures on cast: when your pole has no lure, your next double right-click or Cast Fishing key press puts on the best lure in your bags that your skill can use, and the press after that casts. Presses wait while a lure goes on, so they can't interrupt it. With no usable lure in your bags, Bobber just casts. A lure that fails twice in a row is skipped for the session. On by default; turn it off with Put on a lure when you cast.
+- The window says when your next cast puts on a lure, and shows a lure going on.
+- Shorter window hints, so each fits on one line.
+
 ## 0.2.0
 
 - A gear button in the window's header opens Bobber's options.

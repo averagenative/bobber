@@ -6,6 +6,7 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 
 - **Double right-click to cast.** This works only while a fishing pole is equipped, so double right-clicks do nothing unusual when you aren't fishing. The window shows whether it's ready.
 - **Right-click anywhere to loot.** While the line is out, a right-click anywhere hooks the bobber, and the catch goes straight into your bags. You can switch to a double right-click, or turn it off and click the bobber yourself.
+- **Lures on cast.** When your pole has no lure, your next cast press puts on the best lure in your bags instead, and the press after that casts. If you have no lure you can use, Bobber just casts.
 - **Enhanced fishing sounds.** While a pole is equipped, sound effects play at full volume, music and ambient sound are off, and sound keeps playing in the background. Your own settings come back when the pole comes off, and also after a reload, a disconnect, or a logout.
 - **Pole and weapon swapping.** The window has slots for your pole, main hand, and off hand. Click the pole to fish and click a weapon to fight. Bobber remembers what you use, or you can drag items onto the slots. The weapon slots work in combat, and your weapons go back on as soon as combat starts.
 - **A catch window.** Session, zone, and all-time tabs list each fish with its count and share. The window also shows casts, catches, fish that got away, hooks that came too early, catches per hour, fishing time, your fishing skill with its bonus, and the time left on your lure.
@@ -14,7 +15,7 @@ Bobber is a fishing helper for World of Warcraft: Forever. Double right-click th
 ## Use Bobber
 
 1. Equip your fishing pole. Click the pole slot in the Bobber window, or use the **Equip fishing pole** key binding.
-2. Double right-click the water to cast.
+2. Double right-click the water to cast. If your pole has no lure and you have one in your bags, this first press puts the lure on (it takes 5 seconds), and the next double right-click casts.
 3. When the bobber splashes, right-click anywhere. Bobber loots the catch for you.
 4. To fight, click a weapon slot. If combat starts while you're fishing, Bobber puts your weapons back on.
 
@@ -42,6 +43,7 @@ Open the options with the gear button in the Bobber window's header, from **Opti
 | Right-click to loot | Single right-click anywhere | How right-click hooks the bobber: single, double, or off. |
 | Cast key also hooks | On | The Cast Fishing key hooks while the line is out. |
 | Cast key equips your pole | On | The Cast Fishing key equips your pole when it's off. |
+| Put on a lure when you cast | On | With no lure on the pole, a cast press puts on the best lure in your bags. No lure in your bags: it just casts. |
 | Always reach the bobber | On | Widens soft targeting while the line is out. |
 | Show an icon over the bobber | Off | Shows the game's interact icon over the bobber. |
 | Auto-loot fish | On | Takes everything from fishing loot windows only. |
@@ -97,6 +99,7 @@ Bobber is plain Lua with no libraries. Each file starts with a comment that expl
 | `Casting.lua` | Double-click casting, right-click hooking, and the cast key. |
 | `Sounds.lua` | Enhanced fishing sounds. |
 | `Gear.lua` | The pole and weapon slots and the combat weapon swap. |
+| `Lures.lua` | Choosing a lure and putting it on with a cast press. |
 | `Catches.lua` | Catch counting, fishing auto-loot, and fishing skill. |
 | `Window.lua` | The Bobber window. |
 | `Options.lua` | The options panel. |
@@ -119,7 +122,7 @@ To release a version, update `## Version:` in `Bobber.toc`, add a matching `## <
 
 ## Credits
 
-Bobber's feature set is inspired by Fishing Buddy by Sutorix. The OneCast and EzFishing addons (both MIT-licensed) documented how casting and soft-target hooking behave on WoW: Forever. Bobber's code is its own.
+Bobber's feature set is inspired by Fishing Buddy by Sutorix. The OneCast and EzFishing addons (both MIT-licensed) documented how casting and soft-target hooking behave on WoW: Forever, and the lure list in `Lures.lua` (item IDs, spell IDs, required skill) comes from OneCast. Bobber's code is its own.
 
 ## License
 

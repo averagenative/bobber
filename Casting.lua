@@ -26,6 +26,10 @@ does:
 * The cast key. The "Cast Fishing" key binding casts, and while the line is
   out the same key hooks.
 
+* Lures. When your pole has no lure, a cast press (double right-click or
+  the cast key) puts on the best lure in your bags instead of casting; the
+  next press casts. Lures.lua picks the lure and tracks it going on.
+
 How the game handles these changes: SetOverrideBinding() temporarily gives a
 key or mouse button a different action, on behalf of an "owner" frame, and
 ClearOverrideBindings(owner) removes that owner's overrides. Bindings can't
@@ -103,6 +107,7 @@ local function SetCastButtonToCastFishing()
         return
     end
     castButton:SetAttribute("type", "spell")
+    castButton:SetAttribute("macrotext", nil)
     if ns.fishingSpellName then
         castButton:SetAttribute("spell", ns.fishingSpellName)
     end
@@ -116,28 +121,67 @@ local function SkipThisPress(button)
     end)
 end
 
--- PreClick runs just before the template acts, once for each half of a press.
+-- Make the current press run `macroText` instead of casting. The button
+-- goes back to casting when the press comes up (PostClick below), or after
+-- a second if the release never reaches the button.
+local isPressRunningMacro = false
+local function RunMacroForThisPress(button, macroText)
+    button:SetAttribute("type", "macro")
+    button:SetAttribute("macrotext", macroText)
+    isPressRunningMacro = true
+    C_Timer.After(1, function()
+        if isPressRunningMacro then
+            isPressRunningMacro = false
+            ns.RunOutOfCombat(SetCastButtonToCastFishing)
+        end
+    end)
+end
+
+-- Decide what this press does, before the template acts on it. In order:
+-- 1. No pole: equip it (if that option is on); the next press goes on.
+-- 2. A lure is going on: wait, so the press can't interrupt it.
+-- 3. The pole has no lure and the bags have one: put it on (Lures.lua).
+-- 4. Otherwise: cast Fishing, which the button does by default.
+local function ChooseWhatThisPressDoes(button)
+    if ns.settings.castKeyEquipsPole and not ns.IsPoleEquipped() and ns.Gear.EquipPole() then
+        SkipThisPress(button)
+        return
+    end
+    if ns.Lures.IsLureGoingOn() then
+        SkipThisPress(button)
+        return
+    end
+    local lureMacroText = ns.Lures.GetLureMacroForThisPress()
+    if lureMacroText then
+        RunMacroForThisPress(button, lureMacroText)
+    end
+end
+
+-- PreClick runs just before the template acts, once for each half of a
+-- press. The decision is made on the down half, which always comes first,
+-- so it's in place whichever half the template acts on.
 castButton:HookScript("PreClick", function(self, _, isDown)
     if InCombatLockdown() then
         return
     end
     if isDown then
         castButtonSawPressDown = true
+        ChooseWhatThisPressDoes(self)
     elseif not castButtonSawPressDown and GetTime() - lineCameInTime < HOOK_RELEASE_WINDOW_SECONDS then
         -- The key went down as a hook and is coming up after the line came
         -- in. Without this, players who cast on key release would recast.
-        SkipThisPress(self)
-        return
-    end
-    -- Without a pole, the cast key equips it; the next press casts.
-    if isDown and ns.settings.castKeyEquipsPole and not ns.IsPoleEquipped() and ns.Gear.EquipPole() then
         SkipThisPress(self)
     end
 end)
 
 castButton:HookScript("PostClick", function(_, _, isDown)
-    if not isDown then
-        castButtonSawPressDown = false
+    if isDown then
+        return
+    end
+    castButtonSawPressDown = false
+    if isPressRunningMacro and not InCombatLockdown() then
+        isPressRunningMacro = false
+        SetCastButtonToCastFishing()
     end
 end)
 

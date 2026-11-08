@@ -589,7 +589,10 @@ local function RefreshSkillAndLure(theme)
     end
 
     local lureSecondsLeft = GetLureSecondsLeft()
-    if lureSecondsLeft == nil then
+    if ns.Lures.IsLureGoingOn() then
+        ui.lureText:SetText("Lure going on")
+        SetTextColor(ui.lureText, theme.accent)
+    elseif lureSecondsLeft == nil then
         ui.lureText:SetText("")
     elseif lureSecondsLeft > 0 then
         ui.lureText:SetText("Lure " .. FormatDuration(lureSecondsLeft))
@@ -600,10 +603,12 @@ local function RefreshSkillAndLure(theme)
     end
 end
 
+-- Hints stay at 28 characters or fewer, so each fits on one line beside
+-- the gear slots.
 local CAST_HINTS = {
-    ready = "Double right-click water to cast",
-    needs_pole = "Equip a pole to cast with a double right-click",
-    off = "Double-click casting is off",
+    ready = "Double right-click to cast",
+    needs_pole = "Equip a pole to cast",
+    off = "Double-click cast is off",
 }
 
 local HOOK_HINTS = {
@@ -612,15 +617,22 @@ local HOOK_HINTS = {
     [ns.HOOK_OFF] = "Click the bobber to loot",
 }
 
-local function RefreshHints(theme)
-    local doubleClickState = ns.Casting.GetDoubleClickState()
+-- The first hint says what your next press does.
+local function GetCastHint(doubleClickState)
     if ns.Casting.IsLineOut() then
-        ui.castHintText:SetText("Line is out")
-        SetTextColor(ui.castHintText, theme.accent)
-    else
-        ui.castHintText:SetText(CAST_HINTS[doubleClickState])
-        SetTextColor(ui.castHintText, doubleClickState == "ready" and theme.accent or theme.muted)
+        return "Line is out", true
+    elseif ns.Lures.IsLureGoingOn() then
+        return "Putting on a lure...", true
+    elseif doubleClickState == "ready" and ns.Lures.GetLureForNextPress() then
+        return "Next cast puts on a lure", true
     end
+    return CAST_HINTS[doubleClickState], doubleClickState == "ready"
+end
+
+local function RefreshHints(theme)
+    local castHint, isHighlighted = GetCastHint(ns.Casting.GetDoubleClickState())
+    ui.castHintText:SetText(castHint)
+    SetTextColor(ui.castHintText, isHighlighted and theme.accent or theme.muted)
     ui.hookHintText:SetText(HOOK_HINTS[ns.settings.rightClickHookMode] or HOOK_HINTS[ns.HOOK_OFF])
     SetTextColor(ui.hookHintText, ns.Casting.IsLineOut() and theme.accent or theme.text)
 end
@@ -778,6 +790,7 @@ ns.On("BOBBER_GEAR_CHANGED", function()
 end)
 
 ns.On("BOBBER_STATS_CHANGED", Window.Refresh)
+ns.On("BOBBER_LURE_CHANGED", Window.Refresh)
 ns.On("BOBBER_CAST_START", Window.Refresh)
 ns.On("BOBBER_CAST_STOP", Window.Refresh)
 

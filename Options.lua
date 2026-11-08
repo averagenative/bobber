@@ -62,6 +62,12 @@ local OPTION_LIST = {
     },
     {
         kind = "checkbox",
+        key = "applyLures",
+        label = "Put on a lure when you cast",
+        tooltip = "When your pole has no lure, your next cast press (double right-click or the cast key) puts on the best lure in your bags instead, and the press after that casts. Lures take 5 seconds to put on, and presses during that time wait. If you have no lure you can use, Bobber just casts.",
+    },
+    {
+        kind = "checkbox",
         key = "extendBobberReach",
         label = "Always reach the bobber",
         tooltip = "Widens soft targeting while the line is out, so right-click finds the bobber wherever it lands.",

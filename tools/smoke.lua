@@ -228,6 +228,10 @@ local SHIELD = 3000
 local AXE = 2500
 local SMALLFISH = 6291
 local SUNFISH = 6358
+local NIGHTCRAWLERS = 6530       -- lure, +50, needs skill 50
+local FISH_ATTRACTOR = 6533      -- lure, +100, needs skill 100
+local NIGHTCRAWLERS_SPELL = 8088
+local FISH_ATTRACTOR_SPELL = 8089
 
 local itemDatabase = {
     [POLE] = { equipLocation = "INVTYPE_2HWEAPON", classID = 2, subclassID = 20 },
@@ -236,10 +240,12 @@ local itemDatabase = {
     [SHIELD] = { equipLocation = "INVTYPE_SHIELD", classID = 4, subclassID = 6 },
     [SMALLFISH] = { equipLocation = "", classID = 7, subclassID = 8 },
     [SUNFISH] = { equipLocation = "", classID = 7, subclassID = 8 },
+    [NIGHTCRAWLERS] = { equipLocation = "", classID = 0, subclassID = 8 },
+    [FISH_ATTRACTOR] = { equipLocation = "", classID = 0, subclassID = 8 },
 }
 
 local equippedItems = { [16] = SWORD, [17] = SHIELD }
-local bagItemCounts = { [POLE] = 1, [AXE] = 1 }
+local bagItemCounts = { [POLE] = 1, [AXE] = 1, [NIGHTCRAWLERS] = 2, [FISH_ATTRACTOR] = 1 }
 
 local function ItemIDFrom(item)
     if type(item) == "number" then
@@ -420,7 +426,13 @@ function LootSlot(slotIndex) lootWindow.slots[slotIndex].looted = true end
 
 function GetProfessions() return nil, nil, nil, 4, nil end
 function GetProfessionInfo() return "Fishing", 136245, fishingSkill or 142, 150, 1, 0, 356, 25 end
-function GetWeaponEnchantInfo() return true, 492000, 0, 263 end
+local isLureOnPole = true
+function GetWeaponEnchantInfo()
+    if isLureOnPole then return true, 492000, 0, 263 end
+    return false
+end
+function SpellIsTargeting() return false end
+function SpellStopTargeting() end
 function GetRealZoneText() return "Elwynn Forest" end
 
 function IsMounted() return false end
@@ -484,12 +496,24 @@ function CreateSettingsListSectionHeaderInitializer() return {} end
 -------------------------------------------------------------------------------
 
 local castSpells = {}
+local usedItems = {}  -- items a macro used on the main hand ("/use item:N" then "/use 16")
 
 local function RunMacro(macroText)
+    local itemWaitingForTarget
     for line in macroText:gmatch("[^\n]+") do
-        local inventorySlot, itemID = line:match("^/equipslot (%d+) item:(%d+)$")
-        assert(inventorySlot, "unexpected macro line: " .. line)
-        EquipItem(tonumber(itemID), tonumber(inventorySlot))
+        local inventorySlot, equipItemID = line:match("^/equipslot (%d+) item:(%d+)$")
+        local useItemID = line:match("^/use item:(%d+)$")
+        if inventorySlot then
+            EquipItem(tonumber(equipItemID), tonumber(inventorySlot))
+        elseif useItemID then
+            itemWaitingForTarget = tonumber(useItemID)
+        elseif line == "/use 16" then
+            assert(itemWaitingForTarget, "/use 16 with nothing to put on the main hand")
+            usedItems[#usedItems + 1] = itemWaitingForTarget
+            itemWaitingForTarget = nil
+        else
+            error("unexpected macro line: " .. line)
+        end
     end
 end
 
@@ -765,6 +789,77 @@ Step("gear button and opacity", function()
     Check(optionsOpenCount == 1 and chatMessages[#chatMessages]:find("combat") ~= nil, "options don't open during combat")
     BobberDB.settings.windowOpacity = 0.9
     registeredSettings.windowOpacity.onChange()
+end)
+
+-- Press the cast key (down and up) and report what it did.
+local function PressCastKey()
+    local castsBefore, usesBefore = #castSpells, #usedItems
+    Click(BobberCastButton)
+    if #usedItems > usesBefore then return "lure", usedItems[#usedItems] end
+    if #castSpells > castsBefore then return "cast" end
+    return "nothing"
+end
+
+local function FireLureSpell(eventName, spellID)
+    FireEvent(eventName, "player", "lure-guid", spellID)
+end
+
+Step("a cast press puts on a lure", function()
+    AdvanceTime(5)
+    isLureOnPole = false
+    local chatCountBefore = #chatMessages
+    ns.Window.Refresh()
+    Check(IsTextShown("Next cast puts on a lure"), "window says the next cast puts on a lure")
+    RightClickWorld()
+    AdvanceTime(0.2)
+    local command = RightClickWorld()
+    Check(command == "CLICK BobberCastButton:LeftButton", "double right-click went to the cast button")
+    Check(usedItems[#usedItems] == FISH_ATTRACTOR, "the double right-click put on the best lure (Fish Attractor)")
+    Check(BobberCastButton.attributes.type == "spell", "the button casts again after the press")
+    Check(ns.Lures.IsLureGoingOn(), "waiting for the lure to start")
+    FireLureSpell("UNIT_SPELLCAST_START", FISH_ATTRACTOR_SPELL)
+    AdvanceTime(2)
+    Check(PressCastKey() == "nothing", "a press while the lure goes on waits")
+    Check(IsTextShown("Lure going on"), "window shows the lure going on")
+    AdvanceTime(3)
+    bagItemCounts[FISH_ATTRACTOR] = 0
+    FireLureSpell("UNIT_SPELLCAST_SUCCEEDED", FISH_ATTRACTOR_SPELL)
+    Check(PressCastKey() == "cast", "the next press casts, even before the pole shows the lure")
+    isLureOnPole = true
+    AdvanceTime(5)
+    Check(PressCastKey() == "cast", "with a lure on, presses cast")
+    Check(#chatMessages == chatCountBefore, "no chat messages about lures")
+end)
+
+Step("a lure that keeps failing is skipped", function()
+    AdvanceTime(5)
+    isLureOnPole = false
+    local result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == NIGHTCRAWLERS, "the next best lure (Nightcrawlers) goes on")
+    AdvanceTime(2)
+    Check(not ns.Lures.IsLureGoingOn(), "a lure whose spell never started is written off")
+    result, itemID = PressCastKey()
+    Check(result == "lure" and itemID == NIGHTCRAWLERS, "Nightcrawlers gets a second try")
+    FireLureSpell("UNIT_SPELLCAST_START", NIGHTCRAWLERS_SPELL)
+    AdvanceTime(1)
+    FireLureSpell("UNIT_SPELLCAST_INTERRUPTED", NIGHTCRAWLERS_SPELL)
+    AdvanceTime(1)
+    Check(PressCastKey() == "cast", "after two failures Nightcrawlers is skipped and the press casts")
+end)
+
+Step("no usable lure in the bags: just cast", function()
+    AdvanceTime(5)
+    isLureOnPole = false
+    bagItemCounts[NIGHTCRAWLERS] = 0
+    local chatCountBefore = #chatMessages
+    Check(PressCastKey() == "cast", "no lure in the bags, so the press casts")
+    Check(#chatMessages == chatCountBefore, "and says nothing")
+    BobberDB.settings.applyLures = false
+    bagItemCounts[FISH_ATTRACTOR] = 1
+    AdvanceTime(1)
+    Check(PressCastKey() == "cast", "with the option off, presses always cast")
+    BobberDB.settings.applyLures = true
+    isLureOnPole = true
 end)
 
 Step("slash commands", function()

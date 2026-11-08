@@ -22,6 +22,7 @@ Bobber's own events:
   BOBBER_CAST_START        the Fishing channel started (the line is out)
   BOBBER_CAST_STOP         the Fishing channel ended (the line came in)
   BOBBER_GEAR_CHANGED      the pole or weapon slots changed
+  BOBBER_LURE_CHANGED      a lure went on, failed, or what the next press does changed
   BOBBER_STATS_CHANGED     a cast, catch, or getaway was counted
 ]]
 
@@ -122,6 +123,7 @@ ns.DEFAULT_SETTINGS = {
     rightClickHookMode = ns.HOOK_SINGLE_CLICK,
     castKeyHooks = true,           -- the cast key binding also hooks while the line is out
     castKeyEquipsPole = true,      -- the cast key equips your pole when it isn't on
+    applyLures = true,             -- a cast press puts on a lure when the pole has none
     extendBobberReach = true,      -- widen soft targeting so the bobber is always in reach
     showBobberIcon = false,        -- the game's interact icon over the bobber
     autoLootFish = true,           -- take everything from fishing loot windows
