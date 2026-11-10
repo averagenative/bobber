@@ -27,6 +27,8 @@ Controls:
   window is just its contents floating over the game.
 * The window opens when you equip a fishing pole and closes when you take
   it off (both can be turned off in the options).
+* While the line is out, a bar behind the "Line is out" hint counts down
+  the time left on the cast, like the game's casting bar.
 
 Combat note: the gear slots are secure buttons (see Gear.lua), and the game
 doesn't let addons show, hide, move, or scale a window holding secure
@@ -54,6 +56,7 @@ local TAB_ROW_HEIGHT = 22
 local LIST_ROW_HEIGHT = 18
 local VISIBLE_LIST_ROWS = 8
 local FOOTER_HEIGHT = 20
+local CAST_BAR_HEIGHT = 14
 
 -- Distances from the top of the window to the top of each section.
 local INFO_LINE_TOP = HEADER_HEIGHT + 4
@@ -96,6 +99,10 @@ local tabButtons = {}
 local listScrollOffset = 0
 local secondsSinceRefresh = 0
 local wasPoleEquipped = nil  -- for opening and closing on pole changes only
+local castBarWidth = 0
+-- When the Fishing channel started and ends (GetTime() seconds) while the
+-- line is out; nil otherwise, and the cast bar is hidden.
+local castStartSeconds, castEndSeconds = nil, nil
 
 local function CurrentTheme()
     return ns.GetTheme(ns.settings.windowTheme)
@@ -375,6 +382,24 @@ local function BuildGearRow()
     ui.hookHintText:SetPoint("TOPLEFT", ui.castHintText, "BOTTOMLEFT", 0, -3)
     ui.hookHintText:SetWidth(hintsWidth)
     ui.hookHintText:SetJustifyH("LEFT")
+
+    -- The cast bar sits behind the first hint. Its textures are on the
+    -- ARTWORK layer, below the hint text on the OVERLAY layer.
+    castBarWidth = hintsWidth + 3
+    ui.castBarTrack = ui.body:CreateTexture(nil, "ARTWORK")
+    ui.castBarTrack:SetPoint("TOPLEFT", window, "TOPLEFT", hintsLeft - 3, -(GEAR_ROW_TOP + 1))
+    ui.castBarTrack:SetSize(castBarWidth, CAST_BAR_HEIGHT)
+    ui.castBarTrack:Hide()
+
+    ui.castBarFill = ui.body:CreateTexture(nil, "ARTWORK", nil, 1)
+    ui.castBarFill:SetPoint("TOPLEFT", ui.castBarTrack, "TOPLEFT")
+    ui.castBarFill:SetPoint("BOTTOMLEFT", ui.castBarTrack, "BOTTOMLEFT")
+    ui.castBarFill:Hide()
+
+    ui.castBarTimeText = ui.body:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    ui.castBarTimeText:SetPoint("TOPRIGHT", window, "TOPLEFT", hintsLeft + hintsWidth - 3, -(GEAR_ROW_TOP + 3))
+    ui.castBarTimeText:SetJustifyH("RIGHT")
+    ui.castBarTimeText:Hide()
 end
 
 function Window.SetScope(scopeKey)
@@ -510,8 +535,10 @@ local function BuildWindow()
         secondsSinceRefresh = 0
         Window.Refresh()
     end)
-    -- Refresh once a second while shown, for the lure timer and fishing time.
+    -- The cast bar moves every frame. Everything else refreshes once a
+    -- second while shown, for the lure timer and fishing time.
     window:SetScript("OnUpdate", function(_, elapsedSeconds)
+        Window.UpdateCastBar()
         secondsSinceRefresh = secondsSinceRefresh + elapsedSeconds
         if secondsSinceRefresh >= REFRESH_INTERVAL_SECONDS then
             secondsSinceRefresh = 0
@@ -544,6 +571,9 @@ function Window.ApplyTheme()
     SetTextColor(ui.skillText, theme.text)
     SetTextColor(ui.footerText, theme.muted)
     SetTextColor(ui.emptyListText, theme.muted)
+    SetTextColor(ui.castBarTimeText, theme.text)
+    ui.castBarTrack:SetColorTexture(theme.accent[1], theme.accent[2], theme.accent[3], 0.12)
+    ui.castBarFill:SetColorTexture(theme.accent[1], theme.accent[2], theme.accent[3], 0.4)
     SetTextColor(ui.closeButton.label, theme.muted)
     SetTextColor(ui.collapseButton.label, theme.muted)
     for _, row in ipairs(listRows) do
@@ -632,7 +662,12 @@ end
 local function RefreshHints(theme)
     local castHint, isHighlighted = GetCastHint(ns.Casting.GetDoubleClickState())
     ui.castHintText:SetText(castHint)
-    SetTextColor(ui.castHintText, isHighlighted and theme.accent or theme.muted)
+    if castEndSeconds then
+        -- Accent text would be hard to read on the accent-colored cast bar.
+        SetTextColor(ui.castHintText, theme.text)
+    else
+        SetTextColor(ui.castHintText, isHighlighted and theme.accent or theme.muted)
+    end
     ui.hookHintText:SetText(HOOK_HINTS[ns.settings.rightClickHookMode] or HOOK_HINTS[ns.HOOK_OFF])
     SetTextColor(ui.hookHintText, ns.Casting.IsLineOut() and theme.accent or theme.text)
 end
@@ -708,6 +743,42 @@ local function RefreshFooter()
         parts[#parts + 1] = FormatDuration(ns.Catches.GetSessionFishingSeconds())
     end
     ui.footerText:SetText(table.concat(parts, "  "))
+end
+
+-- Shrink the cast bar's fill to the share of the cast that's left, and
+-- show the seconds left beside it.
+function Window.UpdateCastBar()
+    if not castEndSeconds then
+        return
+    end
+    local secondsLeft = math.max(0, castEndSeconds - GetTime())
+    local fractionLeft = math.min(1, secondsLeft / (castEndSeconds - castStartSeconds))
+    local fillWidth = castBarWidth * fractionLeft
+    -- A zero-width texture can draw at full size, so hide it instead.
+    ui.castBarFill:SetShown(fillWidth >= 1)
+    ui.castBarFill:SetWidth(math.max(1, fillWidth))
+    ui.castBarTimeText:SetText(FormatDuration(math.ceil(secondsLeft)))
+end
+
+-- Read the cast's times when the line goes out or the cast changes, and
+-- clear them when the line comes in.
+local function UpdateCastTimes()
+    if not window then
+        return
+    end
+    castStartSeconds, castEndSeconds = nil, nil
+    if ns.Casting.IsLineOut() then
+        castStartSeconds, castEndSeconds = ns.GetFishingChannelTimes()
+    end
+    local isCastBarShown = castEndSeconds ~= nil
+    ui.castBarTrack:SetShown(isCastBarShown)
+    ui.castBarTimeText:SetShown(isCastBarShown)
+    if isCastBarShown then
+        Window.UpdateCastBar()
+    else
+        ui.castBarFill:Hide()
+    end
+    Window.Refresh()
 end
 
 function Window.Refresh()
@@ -791,8 +862,9 @@ end)
 
 ns.On("BOBBER_STATS_CHANGED", Window.Refresh)
 ns.On("BOBBER_LURE_CHANGED", Window.Refresh)
-ns.On("BOBBER_CAST_START", Window.Refresh)
-ns.On("BOBBER_CAST_STOP", Window.Refresh)
+ns.On("BOBBER_CAST_START", UpdateCastTimes)
+ns.On("BOBBER_CAST_STOP", UpdateCastTimes)
+ns.On("UNIT_SPELLCAST_CHANNEL_UPDATE", UpdateCastTimes, "player")
 
 ns.On("BOBBER_SETTINGS_CHANGED", function(settingKey)
     if settingKey == "windowTheme" or settingKey == "windowOpacity" then

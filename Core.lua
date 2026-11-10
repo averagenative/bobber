@@ -281,6 +281,20 @@ function ns.IsChannelingFishing()
     return ns.IsFishingSpell(spellID)
 end
 
+-- When the Fishing channel started and when it ends, in GetTime() seconds.
+-- Nil when you aren't channeling Fishing, or when the game keeps the times
+-- secret.
+function ns.GetFishingChannelTimes()
+    local _, _, _, startMilliseconds, endMilliseconds, _, _, spellID = UnitChannelInfo("player")
+    if not ns.IsFishingSpell(spellID) or ns.IsSecret(startMilliseconds) or ns.IsSecret(endMilliseconds) then
+        return nil
+    end
+    if not startMilliseconds or not endMilliseconds or endMilliseconds <= startMilliseconds then
+        return nil
+    end
+    return startMilliseconds / 1000, endMilliseconds / 1000
+end
+
 -------------------------------------------------------------------------------
 -- Fishing poles
 -------------------------------------------------------------------------------

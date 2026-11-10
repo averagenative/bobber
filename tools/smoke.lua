@@ -182,7 +182,7 @@ end
 -- True if a font string whose frame is shown has text matching `pattern`.
 local function IsTextShown(pattern)
     for _, fontString in ipairs(allFontStrings) do
-        if fontString.text:find(pattern) and fontString.parent.isShown ~= false then
+        if fontString.text:find(pattern) and fontString.isShown and fontString.parent.isShown ~= false then
             return true
         end
     end
@@ -329,7 +329,7 @@ function ClearCursor() cursorItemID = nil end
 -------------------------------------------------------------------------------
 
 local ORIGINAL_CVARS = {
-    Sound_EnableAllSound = "1", Sound_EnableSFX = "1", Sound_SFXVolume = "0.5",
+    Sound_EnableAllSound = "1", Sound_MasterVolume = "0.07", Sound_EnableSFX = "1", Sound_SFXVolume = "0.5",
     Sound_MusicVolume = "0.4", Sound_AmbienceVolume = "0.6", Sound_EnableSoundWhenGameIsInBG = "0",
     SoftTargetInteract = "1", SoftTargetInteractArc = "0", SoftTargetInteractRange = "10",
     SoftTargetIconGameObject = "0", SoftTargetIconInteract = "0", ActionButtonUseKeyDown = "1",
@@ -405,10 +405,14 @@ function IsControlKeyDown() return false end
 local isShiftKeyHeld = false
 function IsShiftKeyDown() return isShiftKeyHeld end
 
+local FISHING_CHANNEL_SECONDS = 30
 local channelSpellID = nil
+local channelStartTime = 0
 function UnitChannelInfo()
     if channelSpellID then
-        return "Fishing", "", 136245, 0, 0, false, false, channelSpellID
+        local startMilliseconds = channelStartTime * 1000
+        return "Fishing", "", 136245, startMilliseconds, startMilliseconds + FISHING_CHANNEL_SECONDS * 1000,
+            false, false, channelSpellID
     end
     return nil
 end
@@ -593,6 +597,7 @@ local ns = addonTable
 
 local function StartChannel()
     channelSpellID = 7620
+    channelStartTime = GetTime()
     FireEvent("UNIT_SPELLCAST_CHANNEL_START", "player", "cast-guid", 7620)
 end
 
@@ -652,6 +657,7 @@ Step("equip the pole from the window slot", function()
     Check(equippedItems[17] == nil, "off hand went to the bags")
     Check(BobberCharDB.gear.remembered.offHand == SHIELD, "still remembers the shield")
     Check(cvars.Sound_SFXVolume == "1" and cvars.Sound_MusicVolume == "0", "fishing sounds enhanced")
+    Check(cvars.Sound_MasterVolume == "1", "master volume at full with the pole")
     Check(cvars.Sound_EnableSoundWhenGameIsInBG == "1", "sound in the background with the pole on")
     Check(BobberWindow:IsShown(), "window opened with the pole")
 end)
@@ -676,10 +682,14 @@ Step("double right-click casts", function()
     Check(ActiveOverride("BUTTON2") == "INTERACTTARGET", "right-click now hooks")
     Check(ActiveOverride("F") == "INTERACTTARGET", "cast key now hooks")
     Check(BobberCharDB.lifetime.casts == 1, "cast counted")
+    BobberWindow.scripts.OnUpdate(BobberWindow, 0.02)
+    Check(IsTextShown("^Line is out$") and IsTextShown("^0:30$"), "cast bar shows the time left")
 end)
 
 Step("right-click hooks and the catch is looted", function()
     AdvanceTime(8)
+    BobberWindow.scripts.OnUpdate(BobberWindow, 0.02)
+    Check(IsTextShown("^0:22$"), "cast bar counts down")
     local command = RightClickWorld()
     Check(command == "INTERACTTARGET", "right-click ran Interact")
     OpenFishingLoot({
@@ -693,6 +703,7 @@ Step("right-click hooks and the catch is looted", function()
     Check(ActiveOverride("BUTTON2") == nil, "right-click back to normal")
     Check(ActiveOverride("F") == nil, "cast key back to normal")
     Check(cvars.SoftTargetInteractRange == "10", "reach restored")
+    Check(not IsTextShown("^0:%d%d$"), "cast bar gone once the line is in")
     Check(BobberCharDB.lifetime.catches == 1, "catch counted")
     Check(BobberCharDB.lifetime.items[SUNFISH] == 2, "item quantities counted")
     Check(BobberDB.itemInfo[SMALLFISH].name == "Raw Brilliant Smallfish", "item name remembered")
@@ -750,6 +761,7 @@ Step("combat puts the weapons back", function()
     FireEvent("PLAYER_REGEN_ENABLED")
     AdvanceTime(1)
     Check(cvars.Sound_SFXVolume == "0.5" and cvars.Sound_MusicVolume == "0.4", "your sound settings came back")
+    Check(cvars.Sound_MasterVolume == "0.07", "your master volume came back")
     Check(cvars.Sound_EnableSoundWhenGameIsInBG == "0", "background sound off again without the pole")
     Check(cvars.SoftTargetInteractRange == "10", "reach restored after combat")
     Check(BobberWindow:IsShown() == false, "window closed after the pole came off")

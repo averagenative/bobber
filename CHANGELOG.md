@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2
+
+- A cast bar in the window: while the line is out, a bar behind "Line is out" counts down the time left on your cast, with the seconds beside it.
+- Enhanced fishing sounds also turn master volume up to full while a pole is equipped. Before, only the sound effects volume went up, so a low master volume kept the splash quiet. Your master volume comes back when the pole comes off.
+
 ## 0.4.1
 
 - Sound in the background is now a choice: While a pole is equipped (the default), Always, or Off. If you had it on in 0.4.0, it moves to While a pole is equipped; off stays off.

@@ -5,9 +5,9 @@ Two separate options, each a CVarLease (see CVarLease.lua), so the changes
 are undone even after a reload or disconnect:
 
 * Enhanced fishing sounds ("sounds" lease): while a fishing pole is
-  equipped, sound effects play at full volume and music and ambient sound
-  are off, so the splash of a bite is easy to hear. Taking the pole off
-  puts your own sound settings back.
+  equipped, master volume and sound effects are at full volume and music
+  and ambient sound are off, so the splash of a bite is easy to hear.
+  Taking the pole off puts your own sound settings back.
 * Sound in the background ("background" lease): game sound keeps playing
   when WoW isn't the active window, so you hear the splash while you're in
   another app. By default this is only while a fishing pole is equipped;
@@ -22,6 +22,7 @@ ns.Sounds = Sounds
 
 local FISHING_SOUND_CVARS = {
     Sound_EnableAllSound = 1,
+    Sound_MasterVolume = 1,
     Sound_EnableSFX = 1,
     Sound_SFXVolume = 1,
     Sound_MusicVolume = 0,

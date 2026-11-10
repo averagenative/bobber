@@ -90,7 +90,7 @@ local OPTION_LIST = {
         kind = "checkbox",
         key = "enhanceSounds",
         label = "Enhance fishing sounds",
-        tooltip = "While a fishing pole is equipped: sound effects at full volume, and music and ambient sound off. Your settings come back when the pole comes off.",
+        tooltip = "While a fishing pole is equipped: master volume and sound effects at full volume, and music and ambient sound off. Your settings come back when the pole comes off.",
     },
     {
         kind = "dropdown",
